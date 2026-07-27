@@ -1,14 +1,23 @@
 import sys
-import os
+from pathlib import Path
 
-# Ensure the root directory is in python path
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+# Fix Streamlit Cloud Path Resolution
+ROOT_DIR = Path(__file__).resolve().parent
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
 
 import streamlit as st
 import pandas as pd
-from utils.helpers import load_css, render_header, render_kpi, get_current_dataset
 
-# Page Configuration
+# Safe dynamic import
+try:
+    from utils.helpers import load_css, render_header, render_kpi, get_current_dataset
+except ModuleNotFoundError as e:
+    st.error(f"❌ Could not load 'utils' module. Path: {ROOT_DIR}")
+    st.error(f"Detailed Error: {str(e)}")
+    st.stop()
+
+# 1. Page Configuration
 st.set_page_config(
     page_title="InsightAI Studio",
     page_icon="⚡",
@@ -16,32 +25,32 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Inject Custom Dark Theme Styles
+# 2. Inject Custom Dark Theme Styles
 load_css()
 
-# Main Application Header
+# 3. Main Application Header
 render_header(
     title="InsightAI Studio",
     subtitle="Keyless Enterprise AI Platform for Interactive Data Analytics & AutoML"
 )
 
-# Fetch Current Dataset from Session State
+# 4. Fetch Current Dataset from Session State
 df = get_current_dataset()
 
-# Dashboard View Logic
+# 5. Main Dashboard View
 if df is None:
     st.markdown("---")
-    st.info("👈 **Welcome!** To get started, upload a dataset in the **Dataset** tab.")
+    st.info("👈 **Welcome!** Select a page from the sidebar to upload your dataset or begin analysis.")
     
-    st.markdown("### 🛠️ Platform Capabilities")
+    st.markdown("### 🛠️ Keyless Capabilities")
     col1, col2, col3 = st.columns(3)
     
     with col1:
         st.markdown(
             """
             <div class="glass-container">
-                <h3>📊 Visual Analytics & SQL</h3>
-                <p>Generate interactive Plotly charts and execute DuckDB SQL queries directly on your data.</p>
+                <h3>📊 Visual Analytics</h3>
+                <p>Interactive charts, custom plot generators, and correlation matrix maps.</p>
             </div>
             """,
             unsafe_allow_html=True
@@ -51,8 +60,8 @@ if df is None:
         st.markdown(
             """
             <div class="glass-container">
-                <h3>🤖 Keyless AI Assistant</h3>
-                <p>Ask natural language questions about your dataset locally without external API keys.</p>
+                <h3>🤖 Local AI Chat</h3>
+                <p>Natural language data queries computed entirely offline without API keys.</p>
             </div>
             """,
             unsafe_allow_html=True
@@ -62,8 +71,8 @@ if df is None:
         st.markdown(
             """
             <div class="glass-container">
-                <h3>⚡ AutoML Workbench</h3>
-                <p>Train and benchmark multiple machine learning models automatically.</p>
+                <h3>⚡ Report Generator</h3>
+                <p>Export executive statistical reports directly in downloadable PDF format.</p>
             </div>
             """,
             unsafe_allow_html=True
@@ -80,16 +89,8 @@ else:
     with c3:
         render_kpi("Missing Values", f"{df.isna().sum().sum():,}", "⚠️")
     with c4:
-        render_kpi("Memory Usage", f"{round(df.memory_usage(deep=True).sum() / (1024 * 1024), 2)} MB", "💾")
+        render_kpi("Memory Size", f"{round(df.memory_usage(deep=True).sum() / (1024 * 1024), 2)} MB", "💾")
 
     st.markdown("---")
-    
-    st.markdown("### 🔍 Dataset Quick Preview")
+    st.markdown("### 🔍 Preview")
     st.dataframe(df.head(10), use_container_width=True)
-    
-    st.markdown("### 📉 Numerical Features Overview")
-    numeric_df = df.select_dtypes(include=['number'])
-    if not numeric_df.empty:
-        st.dataframe(numeric_df.describe().T, use_container_width=True)
-    else:
-        st.write("No numeric columns found in the dataset.")
