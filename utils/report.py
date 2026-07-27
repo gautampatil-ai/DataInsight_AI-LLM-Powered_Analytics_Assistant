@@ -1,24 +1,32 @@
 import os
+import tempfile
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
 import pandas as pd
-import config
 
 class ReportGenerator:
-    """Generates PDF reports locally without API keys."""
+    """Generates PDF reports locally without external config dependencies."""
     
     @staticmethod
     def generate_pdf(df: pd.DataFrame, filename: str = "summary_report.pdf") -> str:
-        filepath = config.REPORTS_DIR / filename
-        doc = SimpleDocTemplate(str(filepath), pagesize=letter)
+        # Store in OS temp directory to avoid folder path issues on cloud
+        temp_dir = tempfile.gettempdir()
+        filepath = os.path.join(temp_dir, filename)
+        
+        doc = SimpleDocTemplate(filepath, pagesize=letter)
         styles = getSampleStyleSheet()
         
         elements = []
         
         # Header Title
-        title_style = ParagraphStyle('TitleStyle', parent=styles['Heading1'], fontSize=20, textColor=colors.HexColor('#7C3AED'))
+        title_style = ParagraphStyle(
+            'TitleStyle', 
+            parent=styles['Heading1'], 
+            fontSize=20, 
+            textColor=colors.HexColor('#7C3AED')
+        )
         elements.append(Paragraph("Data Analysis & Executive Report", title_style))
         elements.append(Spacer(1, 12))
         
@@ -43,4 +51,4 @@ class ReportGenerator:
         
         elements.append(table)
         doc.build(elements)
-        return str(filepath)
+        return filepath
