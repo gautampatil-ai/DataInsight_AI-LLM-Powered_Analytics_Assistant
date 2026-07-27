@@ -11,8 +11,6 @@ duckdb
 openpyxl
 reportlab
 joblib
-python-dotenv
-openai
 statsmodels
-prophet
-bcrypt
+
+
